@@ -1,2 +1,10 @@
-ft_strcmp
-lcm
+ft_strlen
+is_power_of_2
+pgcd
+ft_strlen
+swap_bits
+camel_to_snake
+pgcd
+fizzbuzz
+rev_print
+rot_13
