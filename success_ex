@@ -8,3 +8,14 @@ pgcd
 fizzbuzz
 rev_print
 rot_13
+search_and_replace
+inter
+paramsum
+fprime
+repeat_alpha
+print_bits
+expand_str
+rev_wstr
+search_and_replace
+ft_strcspn
+ft_atoi_base
