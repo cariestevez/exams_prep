@@ -1,6 +1,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 
 int print_error(char *str)
 {
@@ -41,23 +44,23 @@ int my_exec(char **argv, int i, char **envp)//i is at pipe, semicolon or end!! a
 	int pid = 0;
 	int fd[2];
 
-	if (argv[i] && strcmp(argv[i], "|" == 0))
+	if (argv[i] && strcmp(argv[i], "|") == 0)
 		has_pipe = 1;
-	if (has_pipe || strcmp(argv[i], ";" == 0))//the pipe or ; have to be set to 0, so execve knows when to stop executing and doesn't return error
-		argv[i] = NULL;
 	if (has_pipe && pipe(fd) == -1)
 		return (print_error("error: fatal\n"));
 	pid = fork();
 	if (pid == 0)//child process
 	{
-
-		if (has_pipe && (close(fd[0]) == -1 || dup2(fd[1], 1) == -1 || close(fd[1]) == -1))//close reading end of pipe, redirect & close writing end
+        printf("IN CHILD\n");
+        //if (has_pipe || strcmp(argv[i], ";" == 0))//the | or ; have to be set to 0, so execve knows when to stop executing and doesn't return error
+        argv[i] = NULL;//to be done inside of the child, so it doesn't affect the main loop of the parent process!!!
+		if (has_pipe && (close(fd[0]) == -1 || dup2(fd[1], 1) == -1 || close(fd[1]) == -1))//close reading end of pipe, redirect stdout to writing end & close
 			return(print_error("error: fatal\n"));
 		execve(*argv, argv, envp);
 		return (print_error("error: cannot execute "), print_error(*argv), print_error("\n"));
 	}
 	waitpid(pid, &status, 0);//waits for the child process to finish & changes the value of status to the exit code of the child to inspect with WIFEXITED & WEXITSTATUS
-	if (has_pipe && (close(fd[1]) == -1 || dup2(fd[0], 0) == -1 || close(fd[0]) == -1))
+	if (has_pipe && (close(fd[1]) == -1 || dup2(fd[0], 0) == -1 || close(fd[0]) == -1))//next command will be read from fd[0]
 		return(print_error("error: fatal\n"));
 	return (WIFEXITED(status) && WEXITSTATUS(status));//returns the status of the child process (cmd execution)
 }
