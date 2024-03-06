@@ -23,6 +23,7 @@ int cd(char **argv, int i)
         return (print_error("error: cd: bad arguments\n"));
     if (chdir(argv[1]) == -1)
         return (print_error("error: cd: cannot change directory to "), print_error(argv[1]), print_error("\n"));
+    printf("directory successfully changed\n");
     return (0);
 }
 
@@ -74,16 +75,25 @@ int main(int argc, char **argv, char **envp)
     {
 		if (argv[i] && argv[i + 1])
             argv++;//move ptr after ./a.out; i stays at 0
+        printf("MAIN: pointer moved after prog name, now at %s\n", argv[i]);
         while (argv[i])
         {
 			while (argv[i] && strcmp(argv[i], "|") != 0 && strcmp(argv[i], ";") != 0)
 				i++;//move until we find pipe, semicolon or end
+            printf("MAIN: i at position %d\n", i);
             if (strcmp(*argv, "cd") == 0)
                 status = cd(argv, i);
             else
                 status = my_exec(argv, i, envp);
+            printf("MAIN: returned to main at argv[%d] = %s\n", i, argv[i]);
+            if (argv[i] && (strcmp(argv[i], "|") == 0 || strcmp(argv[i], ";") == 0))
+            {
+                printf("MAIN: pipe or semicolon found at argv[%d] = %s\n", i, argv[i]);
+                argv += i;
+                i = 0;
+            }
         }
     }
-    printf("returning status %d\n", status);
+    printf("MAIN: returning status %d\n", status);
     return (status);
 }
