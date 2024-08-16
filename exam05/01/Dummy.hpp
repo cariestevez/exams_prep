@@ -2,8 +2,9 @@
 #define DUMMY_HPP
 
 #include <iostream>
+#include "ATarget.hpp"
 
-class Dummy
+class Dummy : public ATarget
 {
 	protected:
 		std::string _type;
@@ -15,7 +16,7 @@ class Dummy
 		virtual ~Dummy();
 		
 		const std::string &getType() const;
-		void getHitBySpell(const ASpell &spellSource);
+		virtual void getHitBySpell(const ASpell &spellSource);
 		
 		virtual Dummy *clone() const;
 };
