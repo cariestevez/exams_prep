@@ -2,6 +2,7 @@
 #define FWOOSH_HPP
 
 #include <iostream>
+#include "ASpell.hpp"
 
 class Fwoosh : public ASpell
 {

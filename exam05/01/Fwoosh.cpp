@@ -40,7 +40,7 @@ const std::string &Fwoosh::getEffects() const
 
 void Fwoosh::launch(const ATarget &targetSource)
 {
-	targetSource.getHitBySpell(this);
+	targetSource.getHitBySpell(*this);
 }
 
 Fwoosh *Fwoosh::clone() const

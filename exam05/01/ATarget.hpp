@@ -2,6 +2,9 @@
 #define ATARGET_HPP
 
 #include <iostream>
+#include "ASpell.hpp"
+
+class ASpell;
 
 class ATarget
 {
@@ -15,7 +18,7 @@ class ATarget
 		virtual ~ATarget();
 		
 		const std::string &getType() const;
-		void getHitBySpell(const ASpell &spellSource);
+		void getHitBySpell(const ASpell &spellSource) const;
 		
 		//clone pure method that returns a pointer to ATarget
 		virtual ATarget *clone() const = 0;
