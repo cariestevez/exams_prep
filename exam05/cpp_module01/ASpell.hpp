@@ -13,17 +13,17 @@ class ASpell
 		std::string _effects;
 	public:
 		ASpell();
-		ASpell(const std::string &name, const std::string &effects);
-		ASpell &operator=(const ASpell &source);
 		ASpell(const ASpell &source);
+		ASpell &operator=(const ASpell &source);
+		ASpell(const std::string &name, const std::string &effects);
 		virtual ~ASpell();
-		
+
 		const std::string &getName() const;
 		const std::string &getEffects() const;
-		void launch(const ATarget &targetSource);
 		
-		//clone pure method that returns a pointer to ASpell
 		virtual ASpell *clone() const = 0;
+		
+		void launch(const ATarget &targetObj) const;
 };
 
 #endif
