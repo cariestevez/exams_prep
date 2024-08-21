@@ -8,20 +8,21 @@ class ASpell;
 
 class ATarget
 {
-	private:
+	protected:
 		std::string _type;
+	
 	public:
 		ATarget();
-		ATarget(const ATarget &source);
 		ATarget &operator=(const ATarget &source);
-		ATarget(const std::string &type);
+		ATarget(const ATarget &source);
+		ATarget(const std::string &type);//reference or not?? const?
 		virtual ~ATarget();
-
-		const std::string &getType() const;
 		
+		const std::string &getType() const; //reference or not?? const?
+
 		virtual ATarget *clone() const = 0;
 		
 		void getHitBySpell(const ASpell &spellObj) const;
-};
+};	
 
 #endif

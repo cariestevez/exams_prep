@@ -2,52 +2,37 @@
 
 SpellBook::SpellBook() {}
 
-SpellBook::SpellBook(const SpellBook &source)
-{
-	*this = source;
-}
-
-SpellBook &SpellBook::operator=(const SpellBook &source)
+/*SpellBook &SpellBook::operator=(const SpellBook &source)
 {
 	if (this != &source)
 	{
-		std::map<std::string, ASpell *>::iterator it = _book.begin();
-		while (it != _book.end())
-		{
-			delete it->second;
-			++it;
-		}
-		_book.clear();
-
-		std::map<std::string, ASpell *>::const_iterator itSource = source._book.begin();
-		while (itSource != source._book.end())
-		{
-			delete itSource->second;
-			_book[itSource->first] = itSource->second->clone();
-			++itSource;
-		}
+		_book = source._book;//wtf??
 	}
-
 	return *this;
 }
+
+SpellBook::SpellBook(const SpellBook &source)
+{
+	*this = source;
+}*/
 
 SpellBook::~SpellBook()
 {
 	std::map<std::string, ASpell *>::iterator it = _book.begin();
 	while (it != _book.end())
 	{
+		//std::cout << "deleting book" << std::endl;
 		delete it->second;
 		++it;
 	}
 	_book.clear();
 }
 
-
 void SpellBook::learnSpell(ASpell *spellObj)
 {
 	if (spellObj)
 	{
-		std::map<std::string, ASpell *>::iterator it = _book.find(spellObj->getName());
+		std::map<std::string, ASpell *>::const_iterator it = _book.find(spellObj->getName());
 		if (it != _book.end())
 		{
 			delete it->second;
@@ -58,20 +43,22 @@ void SpellBook::learnSpell(ASpell *spellObj)
 
 void SpellBook::forgetSpell(const std::string &spellName)
 {
-	std::map<std::string, ASpell *>::iterator it = _book.find(spellName);
+	std::map<std::string, ASpell *>::const_iterator it = _book.find(spellName);
 	if (it != _book.end())
 	{
 		delete it->second;
-		_book.erase(spellName);
+		_book.erase(it->first);
 	}
 }
 
-ASpell* createSpell(const std::string &spellName)
+ASpell *SpellBook::createSpell(const std::string &spellName)
 {
-	std::map<std::string, ASpell *>::iterator it = _book.find(spellName);
-	if (it != _book.end())
+	if (_book.find(spellName) != _book.end())
 	{
-		return it->second;
+		return _book[spellName];
 	}
 	return NULL;
 }
+  
+
+
