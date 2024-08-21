@@ -8,13 +8,11 @@ class ASpell;
 
 class Fwoosh : public ASpell
 {
-	
 	public:
 		Fwoosh();
 		virtual ~Fwoosh();
-
-		virtual ASpell *clone() const;
-
-};	
+		
+		virtual Fwoosh *clone() const;
+};
 
 #endif

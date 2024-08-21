@@ -6,7 +6,7 @@ Fwoosh::~Fwoosh()
 {
 }
 
-ASpell *Fwoosh::clone() const
+Fwoosh *Fwoosh::clone() const
 {
-	return new Fwoosh(*this); // pointer is of type fwoosh but passed as ASpell to the main, copying content of Fwoosh
+	return new Fwoosh();
 }

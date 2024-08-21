@@ -2,63 +2,59 @@
 
 TargetGenerator::TargetGenerator() {}
 
-/*TargetGenerator &TargetGenerator::operator=(const TargetGenerator &source)
-{
-	if (this != &source)
-	{
-		_catalog = source._catalog; //what do I doooo??
-	}
-	return *this;
-}
-
-TargetGenerator::TargetGenerator(const TargetGenerator &source)
-{
-	*this = source;
-}*/
-
 TargetGenerator::~TargetGenerator()
 {
-	std::map<std::string, ATarget *>::iterator it = _catalog.begin();
-	while (it != _catalog.end())
+	std::map<std::string, ATarget *>::const_iterator iter = _catalog.begin();
+	while (iter != _catalog.end() && iter->second)
 	{
-		//std::cout << "deleting catalog" << std::endl;
-		delete it->second;
-		++it;
+		delete iter->second;
+		++iter;
 	}
 	_catalog.clear();
+
 }
+
 
 void TargetGenerator::learnTargetType(ATarget *targetObj)
 {
 	if (targetObj)
 	{
-		std::map<std::string, ATarget *>::const_iterator it = _catalog.find(targetObj->getType());
-		if (it != _catalog.end())
+		std::map<std::string, ATarget *>::const_iterator iter = _catalog.find(targetObj->getType());
+		if (iter != _catalog.end() && iter->second)
 		{
-			delete it->second;
+			delete iter->second;
 		}
 		_catalog[targetObj->getType()] = targetObj->clone();
 	}
 }
 
-void TargetGenerator::forgetTargetType(const std::string &targetType)
+void TargetGenerator::forgetTargetType(std::string name)
 {
-	std::map<std::string, ATarget *>::const_iterator it = _catalog.find(targetType);
-	if (it != _catalog.end())
+	std::map<std::string, ATarget *>::const_iterator iter = _catalog.find(name);
+	if (iter != _catalog.end())
 	{
-		delete it->second;
-		_catalog.erase(it->first);
+		delete iter->second;
+		_catalog.erase(name);
 	}
 }
 
-ATarget *TargetGenerator::createTarget(const std::string &tragetType)
+ATarget *TargetGenerator::createTarget(const std::string &targetName)
 {
-	if (_catalog.find(tragetType) != _catalog.end())
+	std::map<std::string, ATarget *>::const_iterator iter = _catalog.find(targetName);
+	if (iter != _catalog.end())
 	{
-		return _catalog[tragetType];
+		ATarget *theSpell = iter->second;
+		if (theSpell)
+		{
+			return theSpell;
+		}
 	}
 	return NULL;
 }
-  
+
+
+
+
+
 
 

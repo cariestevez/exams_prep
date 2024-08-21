@@ -6,7 +6,7 @@ Dummy::~Dummy()
 {
 }
 
-ATarget *Dummy::clone() const
+Dummy *Dummy::clone() const
 {
 	return new Dummy();
 }

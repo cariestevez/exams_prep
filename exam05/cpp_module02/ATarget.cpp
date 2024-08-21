@@ -1,6 +1,11 @@
 #include "ATarget.hpp"
 
-ATarget::ATarget() {}
+ATarget::ATarget() : _type() {}
+
+ATarget::ATarget(const ATarget &source)
+{
+	*this = source;
+}
 
 ATarget &ATarget::operator=(const ATarget &source)
 {
@@ -11,24 +16,17 @@ ATarget &ATarget::operator=(const ATarget &source)
 	return *this;
 }
 
-ATarget::ATarget(const ATarget &source)
+ATarget::ATarget(const std::string &type) : _type(type)
 {
-	*this = source;
 }
 
 ATarget::~ATarget()
 {
 }
 
-ATarget::ATarget(const std::string &type) : _type(type) {}
-
-const std::string &ATarget::getType() const
-{
-	return _type;
-}
+const std::string &ATarget::getType() const {return _type;}
 
 void ATarget::getHitBySpell(const ASpell &spellObj) const
 {
 	std::cout << _type << " has been " << spellObj.getEffects() << "!" << std::endl;
 }
-

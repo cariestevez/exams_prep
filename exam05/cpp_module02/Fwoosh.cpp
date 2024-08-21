@@ -6,7 +6,7 @@ Fwoosh::~Fwoosh()
 {
 }
 
-ASpell *Fwoosh::clone() const
+Fwoosh *Fwoosh::clone() const
 {
 	return new Fwoosh();
 }

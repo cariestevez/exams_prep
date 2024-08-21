@@ -6,7 +6,7 @@ Polymorph::~Polymorph()
 {
 }
 
-ASpell *Polymorph::clone() const
+Polymorph *Polymorph::clone() const
 {
 	return new Polymorph();
 }
