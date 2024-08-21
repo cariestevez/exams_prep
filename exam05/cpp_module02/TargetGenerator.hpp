@@ -3,25 +3,27 @@
 
 #include <iostream>
 #include <map>
+#include "ASpell.hpp"
 #include "ATarget.hpp"
 
+class ASpell;
 class ATarget;
 
 class TargetGenerator
 {
-	protected:
-		TargetGenerator(const TargetGenerator &source);
+	private:
 		TargetGenerator &operator=(const TargetGenerator &source);
-
-		std::map<std::string, ATarget *> _generator;
+		TargetGenerator(const TargetGenerator &source);
+	
+		std::map<std::string, ATarget *> _catalog;
 
 	public:
 		TargetGenerator();
-		virtual ~TargetGenerator();
-		
-		void learnTargetType(ATarget*);
-		void forgetTargetType(string const &);
-		ATarget* createTarget(string const &);
-};
+		~TargetGenerator();
+
+		void learnTargetType(ATarget *targetObj);
+		void forgetTargetType(const std::string &targetType);
+		ATarget *createTarget(const std::string &targetType);
+};	
 
 #endif

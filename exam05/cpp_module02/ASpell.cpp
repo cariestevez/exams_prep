@@ -1,11 +1,6 @@
 #include "ASpell.hpp"
 
-ASpell::ASpell() : _name(), _effects() {}
-
-ASpell::ASpell(const ASpell &source)
-{
-	*this = source;
-}
+ASpell::ASpell() {}
 
 ASpell &ASpell::operator=(const ASpell &source)
 {
@@ -14,20 +9,19 @@ ASpell &ASpell::operator=(const ASpell &source)
 		_name = source._name;
 		_effects = source._effects;
 	}
-
 	return *this;
 }
 
-ASpell::ASpell(const std::string &name, const std::string &effects)
+ASpell::ASpell(const ASpell &source)
 {
-	_name = name;
-	_effects = effects;
-
+	*this = source;
 }
 
 ASpell::~ASpell()
 {
 }
+
+ASpell::ASpell(const std::string &name, const std::string &effects) : _name(name), _effects(effects) {}
 
 const std::string &ASpell::getName() const
 {
@@ -43,3 +37,4 @@ void ASpell::launch(const ATarget &targetObj) const
 {
 	targetObj.getHitBySpell(*this);
 }
+

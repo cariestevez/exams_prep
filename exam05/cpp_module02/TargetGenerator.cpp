@@ -1,70 +1,64 @@
 #include "TargetGenerator.hpp"
 
-TargetGenerator::TargetGenerator() : _name(), _effects() {}
+TargetGenerator::TargetGenerator() {}
+
+/*TargetGenerator &TargetGenerator::operator=(const TargetGenerator &source)
+{
+	if (this != &source)
+	{
+		_catalog = source._catalog; //what do I doooo??
+	}
+	return *this;
+}
 
 TargetGenerator::TargetGenerator(const TargetGenerator &source)
 {
 	*this = source;
-}
-
-TargetGenerator &TargetGenerator::operator=(const TargetGenerator &source)
-{
-	if (this != &source)
-	{
-		std::map<std::string, ATarget *>::iterator it = _generator.begin();
-		while (it != _generator.end())
-		{
-			delete it->second;
-			++it;
-		}
-		_generator.clear();
-
-		std::map<std::string, ASpell *>::const_iterator itSource = source._generator.begin();
-		while (itSource != source._generator.end())
-		{
-			delete itSource->second;
-			_generator[itSource->first] = itSource->second->clone();
-			++itSource;
-		}
-	}
-
-	return *this;
-}
+}*/
 
 TargetGenerator::~TargetGenerator()
 {
+	std::map<std::string, ATarget *>::iterator it = _catalog.begin();
+	while (it != _catalog.end())
+	{
+		//std::cout << "deleting catalog" << std::endl;
+		delete it->second;
+		++it;
+	}
+	_catalog.clear();
 }
 
 void TargetGenerator::learnTargetType(ATarget *targetObj)
 {
 	if (targetObj)
 	{
-		std::map<std::string, ATarget *>::iterator it = _generator.find(targetObj->getName());
-		if (it != _generator.end())
+		std::map<std::string, ATarget *>::const_iterator it = _catalog.find(targetObj->getType());
+		if (it != _catalog.end())
 		{
 			delete it->second;
 		}
-		_generator[targetObj->getName()] = targetObj.clone();
+		_catalog[targetObj->getType()] = targetObj->clone();
 	}
 }
 
-void TargetGenerator::forgetTargetType(const std::string &targetName)
+void TargetGenerator::forgetTargetType(const std::string &targetType)
 {
-	std::map<std::string, TargetGenerator *>::iterator it = _generator.find(targetName);
-	if (it != _generator.end())
+	std::map<std::string, ATarget *>::const_iterator it = _catalog.find(targetType);
+	if (it != _catalog.end())
 	{
 		delete it->second;
-		_generator.erase(targetName);
+		_catalog.erase(it->first);
 	}
 }
 
-ATarget *TargetGenerator::createTarget(const std::string &targetName)
+ATarget *TargetGenerator::createTarget(const std::string &tragetType)
 {
-	std::map<std::string, ATarget *>::iterator it = _generator.find(targetName);
-	if (it != _generator.end())
+	if (_catalog.find(tragetType) != _catalog.end())
 	{
-		return it->second;
+		return _catalog[tragetType];
 	}
 	return NULL;
 }
+  
+
 
