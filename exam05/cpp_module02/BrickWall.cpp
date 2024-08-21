@@ -6,7 +6,7 @@ BrickWall::~BrickWall()
 {
 }
 
-ATarget *BrickWall::clone() const
+BrickWall *BrickWall::clone() const
 {
 	return new BrickWall();
 }

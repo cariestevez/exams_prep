@@ -6,7 +6,7 @@ Fireball::~Fireball()
 {
 }
 
-ASpell *Fireball::clone() const
+Fireball *Fireball::clone() const
 {
 	return new Fireball();
 }
