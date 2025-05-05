@@ -6,10 +6,19 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <sys/time.h>
-#include <sys/types.h>
+// ---------------------------------------------------------------------------
+#include <sys/select.h>
 
-// enum fd_type { FD_FREE, FD_LISTENER, FD_CLIENT }; 
+fd_set read_fds, write_fds;
+
+int max_fd = 0;
+int clients_to_ids[1025];// id = count. 1st client = 0, 2nd = 1, etc
+int client_count = -1;
+
+char *write_buffer[100];
+char *read_buffer[100];
+// ---------------------------------------------------------------------------
+
 
 int extract_message(char **buf, char **msg)
 {
@@ -58,33 +67,48 @@ char *str_join(char *buf, char *add)
 	return (newbuf);
 }
 
-int err_exit() {
-	char *err_msg = "Fatal error\n";
-	write(2, err_msg, strlen(err_msg));
+// --- custom functions: -----------------------------------------------------
+
+void fatal_error() {
+	write(2, "Fatal error\n", 12);
 	exit(1);
 }
+// ---------------------------------------------------------------------------
 
 int main(int argc, char **argv) {
 
-    if (argc != 2) {
-        char *err_msg = "Wrong number of arguments\n";
-        write(2, err_msg, strlen(err_msg));
-        exit(1);
-    }
+	// --- input error handling ---
+	if (argc < 2) {
+		write(2, "Wrong number of arguments\n", 26);
+		exit(1);
+	}
+	int port = atoi(argv[1]);//add port error handling?
 
-    int port = atoi(argv[1]);
-    //add port error handling?
+	// --- initialize sets of fds for select() ---
+	//FD_ZERO(&all_fds);
+	FD_ZERO(&read_fds);
+	FD_ZERO(&write_fds);
+	// --- 1. create the listener socket ---
+	int listener_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (listener_fd < 0)
+		fatal_error();
+	max_fd = listener_fd;
+	// --- add to corresponding set ---
+	//FD_SET(listener_fd, &all_fds);
+	FD_SET(listener_fd, &read_fds);
+	// ---------------------------------------------- //
 
-	int sockfd, connfd, len;
-	struct sockaddr_in servaddr, cli; 
+	// int sockfd, connfd, len;
+	struct sockaddr_in servaddr; // struct to hold server's address (IP and port)
 
-	// listener socket create and verification 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0); 
-	if (sockfd == -1) {
-		err_exit();
-	} 
-	else
-		printf("Socket successfully created..\n"); 
+	// // socket create and verification 
+	// sockfd = socket(AF_INET, SOCK_STREAM, 0); 
+	// if (sockfd == -1) { 
+	// 	printf("socket creation failed...\n"); 
+	// 	exit(0); 
+	// } 
+	// else
+	// 	printf("Socket successfully created..\n"); 
 	bzero(&servaddr, sizeof(servaddr)); 
 
 	// assign IP, PORT 
@@ -92,75 +116,59 @@ int main(int argc, char **argv) {
 	servaddr.sin_addr.s_addr = htonl(2130706433); //127.0.0.1
 	servaddr.sin_port = htons(port); 
 
-	// Binding newly created socket to given IP and verification (servaddr contains all the info of our server -> IP, port, etc)
-	if ((bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr))) != 0) { 
-		err_exit();
+	// Binding newly created socket to given IP and verification 
+	if ((bind(listener_fd, (const struct sockaddr *)&servaddr, sizeof(servaddr))) != 0) { 
+		// printf("socket bind failed...\n"); 
+		// exit(0);
+		fatal_error();
 	} 
-	else
-		printf("Socket successfully binded..\n");
-	//tell the kernel to start listening for connections (max 10 clients in this case)
-	if (listen(sockfd, 10) != 0) {
-		err_exit();
+	// else
+	// 	printf("Socket successfully binded..\n");
+	if (listen(listener_fd, 10) != 0) { //specify max number of clients waiting to connect
+		// printf("cannot listen\n"); 
+		// exit(0);
+		fatal_error();
 	}
-	// int *fds = calloc(1, sizeof(int));
-	// if (fds == 0) {
-	// 	err_exit();
-	// }
-	// fds[0] = sockfd;
-	// int fds_size = 1;
-	// enum fd_type *types = calloc(1, sizeof(enum fd_type));
-	// if (types == 0) {
-	// 	err_exit();
-	// }
-	// types[0] = FD_LISTENER;
-	
-	fd_set readfds, writefds;
-	FD_SET(sockfd, &readfds);
-	int fd_max = sockfd;
-	
+
+	// len = sizeof(cli);
+	// connfd = accept(sockfd, (struct sockaddr *)&cli, &len);
+	// if (connfd < 0) { 
+    //     printf("server acccept failed...\n"); 
+    //     exit(0); 
+    // } 
+    // else
+    //     printf("server acccept the client...\n");
+
+	// --- main loop ---
 	while (1) {
-		// monitor with select() the created sets of fds
-		if (select(fd_max + 1, &readfds, NULL, NULL, NULL) == -1) {
-			perror("select");
-			exit(1);
+		// --- 2. monitor the sets of fds with select() ---
+		if (select(max_fd + 1, &read_fds, &write_fds, NULL, NULL) < 0) {
+			fatal_error();
 		}
-		for (int i = 0; i <= fd_max; i++) {		
-			// IF LISTENER FD IS READY, THEN ACCEPT A NEW CONNECTION
-			if (i == sockfd && FD_ISSET(i, &readfds)) {
-				// waits (blocking) for a client to connect and gives a new socket/fd (connfd) to communicate with the client
-				// the original socket (sockfd) is still open and can be used to accept new connections
-				// the client address (IP and port) is stored in cli
-				// the len variable is used to store the size of the client address
-				len = sizeof(cli);
-				connfd = accept(sockfd, (struct sockaddr *)&cli, &len);
-				if (connfd < 0) { 
-					//err_exit();
-					printf("server acccept failed...\n");
-				} 
-				else {
-					printf("server acccepted client fd = %d\n", connfd);
-					FD_SET(connfd, &readfds);
-					//fds_size++;
+		// --- 3. loop through all the fds to check if they're ready ---
+		for (int i = 0; i <= max_fd; i++) {
+			if(!(FD_ISSET(i, &read_fds))) { // if whether listener nor client fd exists & is ready to be read(=receive) without blocking, move to next fd
+				continue;
+			}
+			// new client connection
+			if (i = listener_fd) {
+				int new_client_fd = accept(listener_fd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+				if (new_client_fd > 0) {
+					if (new_client_fd > max_fd) {
+						max_fd = new_client_fd;
+					}
+					clients_to_ids[new_client_fd] = client_count++;
+					FD_SET(new_client_fd, &read_fds);
+					FD_SET(new_client_fd, &write_fds);
+					sprintf(write_buffer, "server: client %d just arrived\n", clients_to_ids[new_client_fd]);
+					for (int other_client = 0; other_client <= max_fd; other_client++) {
+						if (other_client != new_client_fd && FD_ISSET(other_client, &write_fds)) {
+							send(other_client, write_buffer, strlen(write_buffer), 0);
+						}
+					}
 				}
 			}
-			// IF CLIENT FD IS READY,
-			// TO READ, THEN READ DATA
-			else if (i != sockfd && FD_ISSET(i, &readfds)) {
-				//read data from the client fd
-
-				//if nbytes == 0, the client has closed the connection
-				//if nbytes < 0, an error occurred
-				//if arrived at end of request/msg -> set to write FD_SET(connfd, &writefds); FD_CLR(connfd, &readfds);
-
-			}
-			// TO WRITE, THEN WRITE DATA
-			else if (i != sockfd && FD_ISSET(i, &writefds)) {
-
-			}
+			//client
 		}
-		// i++;
-		// if (i > fds_size) {
-		// 	i = 0;
-		// }
 	}
 }
