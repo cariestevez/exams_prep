@@ -13,7 +13,7 @@ fd_set read_fds, write_fds;
 
 int max_fd = 0;
 int clients_to_ids[1025];// id = count. 1st client = 0, 2nd = 1, etc
-int client_count = -1;
+int client_count = 0;
 
 char *write_buffer[100];
 char *read_buffer[100];
@@ -78,7 +78,7 @@ void fatal_error() {
 int main(int argc, char **argv) {
 
 	// --- input error handling ---
-	if (argc < 2) {
+	if (argc != 2) {
 		write(2, "Wrong number of arguments\n", 26);
 		exit(1);
 	}
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 	} 
 	// else
 	// 	printf("Socket successfully binded..\n");
-	if (listen(listener_fd, 10) != 0) { //specify max number of clients waiting to connect
+	if (listen(listener_fd, 10) != 0) { //specify max number of clients waiting to connect (queue). Linux caps to 128
 		// printf("cannot listen\n"); 
 		// exit(0);
 		fatal_error();
