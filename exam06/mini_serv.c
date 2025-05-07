@@ -9,11 +9,11 @@
 // ---------------------------------------------------------------------------
 #include <sys/select.h>
 
-fd_set read_fds, write_fds;
+fd_set read_fds, write_fds, active_fds;;
 
 int max_fd = 0;
-int clients_to_ids[1025];// id = count. 1st client = 0, 2nd = 1, etc
-int client_count = 0;
+int fd_to_id[1025];// client = connection = fd, id = count. 1st client = 0, 2nd = 1, etc
+int id = 0; // as many as possible open fds
 
 char *write_buffer[100];
 char *read_buffer[100];
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 	int port = atoi(argv[1]);//add port error handling?
 
 	// --- initialize sets of fds for select() ---
-	//FD_ZERO(&all_fds);
+	FD_ZERO(&active_fds);
 	FD_ZERO(&read_fds);
 	FD_ZERO(&write_fds);
 	// --- 1. create the listener socket ---
@@ -94,8 +94,8 @@ int main(int argc, char **argv) {
 		fatal_error();
 	max_fd = listener_fd;
 	// --- add to corresponding set ---
-	//FD_SET(listener_fd, &all_fds);
-	FD_SET(listener_fd, &read_fds);
+	FD_SET(listener_fd, &active_fds);
+	// FD_SET(listener_fd, &read_fds);
 	// ---------------------------------------------- //
 
 	// int sockfd, connfd, len;
@@ -141,13 +141,16 @@ int main(int argc, char **argv) {
 
 	// --- main loop ---
 	while (1) {
+
+		read_fds = active_fds;
+		write_fds = active_fds;
 		// --- 2. monitor the sets of fds with select() ---
 		if (select(max_fd + 1, &read_fds, &write_fds, NULL, NULL) < 0) {
 			fatal_error();
 		}
 		// --- 3. loop through all the fds to check if they're ready ---
 		for (int i = 0; i <= max_fd; i++) {
-			if(!(FD_ISSET(i, &read_fds))) { // if whether listener nor client fd exists & is ready to be read(=receive) without blocking, move to next fd
+			if(!(FD_ISSET(i, &read_fds))) { // if fd isn't ready to be read(=receive) without blocking, move to next fd
 				continue;
 			}
 			// new client connection
@@ -157,10 +160,9 @@ int main(int argc, char **argv) {
 					if (new_client_fd > max_fd) {
 						max_fd = new_client_fd;
 					}
-					clients_to_ids[new_client_fd] = client_count++;
-					FD_SET(new_client_fd, &read_fds);
-					FD_SET(new_client_fd, &write_fds);
-					sprintf(write_buffer, "server: client %d just arrived\n", clients_to_ids[new_client_fd]);
+					fd_to_id[new_client_fd] = id++;
+					FD_SET(new_client_fd, &active_fds);
+					sprintf(write_buffer, "server: client %d just arrived\n", fd_to_id[new_client_fd]);
 					for (int other_client = 0; other_client <= max_fd; other_client++) {
 						if (other_client != new_client_fd && FD_ISSET(other_client, &write_fds)) {
 							send(other_client, write_buffer, strlen(write_buffer), 0);
