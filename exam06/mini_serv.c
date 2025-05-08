@@ -17,6 +17,7 @@ int id = 0; // as many as possible open fds
 
 char *write_buffer[100];
 char *read_buffer[100];
+char *message_buffer[1025];
 // ---------------------------------------------------------------------------
 
 
@@ -95,20 +96,19 @@ int main(int argc, char **argv) {
 	max_fd = listener_fd;
 	// --- add to corresponding set ---
 	FD_SET(listener_fd, &active_fds);
-	// FD_SET(listener_fd, &read_fds);
 	// ---------------------------------------------- //
 
 	// int sockfd, connfd, len;
-	struct sockaddr_in servaddr; // struct to hold server's address (IP and port)
-
+	
 	// // socket create and verification 
 	// sockfd = socket(AF_INET, SOCK_STREAM, 0); 
 	// if (sockfd == -1) { 
-	// 	printf("socket creation failed...\n"); 
-	// 	exit(0); 
-	// } 
-	// else
-	// 	printf("Socket successfully created..\n"); 
+		// 	printf("socket creation failed...\n"); 
+		// 	exit(0); 
+		// } 
+		// else
+		// 	printf("Socket successfully created..\n"); 
+	struct sockaddr_in servaddr; // struct to hold server's address (IP and port)
 	bzero(&servaddr, sizeof(servaddr)); 
 
 	// assign IP, PORT 
@@ -142,10 +142,9 @@ int main(int argc, char **argv) {
 	// --- main loop ---
 	while (1) {
 
-		read_fds = active_fds;
-		write_fds = active_fds;
+		read_fds = write_fds = active_fds;
 		// --- 2. monitor the sets of fds with select() ---
-		if (select(max_fd + 1, &read_fds, &write_fds, NULL, NULL) < 0) {
+		if (select(max_fd + 1, &read_fds, &write_fds, NULL, NULL) < 0) { //needs to be called before accept(), otherwise the listener socked would block in accept()
 			fatal_error();
 		}
 		// --- 3. loop through all the fds to check if they're ready ---
@@ -156,21 +155,32 @@ int main(int argc, char **argv) {
 			// new client connection
 			if (i = listener_fd) {
 				int new_client_fd = accept(listener_fd, (struct sockaddr *)&servaddr, sizeof(servaddr));
-				if (new_client_fd > 0) {
+				if (new_client_fd >= 0) {
 					if (new_client_fd > max_fd) {
 						max_fd = new_client_fd;
 					}
 					fd_to_id[new_client_fd] = id++;
 					FD_SET(new_client_fd, &active_fds);
 					sprintf(write_buffer, "server: client %d just arrived\n", fd_to_id[new_client_fd]);
-					for (int other_client = 0; other_client <= max_fd; other_client++) {
-						if (other_client != new_client_fd && FD_ISSET(other_client, &write_fds)) {
-							send(other_client, write_buffer, strlen(write_buffer), 0);
+					for (int client = 0; client <= max_fd; client++) {
+						if (client != new_client_fd && FD_ISSET(client, &write_fds)) {
+							send(client, write_buffer, strlen(write_buffer), 0);
 						}
 					}
+					break;
 				}
 			}
-			//client
+			//client fd ready to be read
+			else {
+				int read_bytes = recv(i, read_buffer, sizeof(read_buffer), 0);
+				if (read_bytes <= 0) { // probable disconnection
+					// add logic to remove client (fd from active fds clearing set, fd_to_id?, close fd, free message buffer) & notify other clients
+					break;
+				}
+				read_buffer[read_bytes] = '\0'; //null terminate buffer string
+				message_buffer[i] = str_join(message_buffer[i], read_buffer); // append newly received message to potential preexisting messages
+				//add logic to check if \n is present and send all full lines to other clients keeping only the rest in the message buffer
+			}
 		}
 	}
 }
