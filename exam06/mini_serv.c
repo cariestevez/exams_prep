@@ -74,6 +74,52 @@ void fatal_error() {
 	write(2, "Fatal error\n", 12);
 	exit(1);
 }
+
+void forward_message(int fd, char *message) {
+	for (int client = 0; client <= max_fd; client++) {
+		if (client != fd && FD_ISSET(client, &write_fds)) {
+			send(client, message, strlen(message), 0);
+		}
+	}
+}
+
+void handle_new_client(int fd) {
+	FD_SET(fd, &active_fds);
+	fd_to_id[fd] = id++;
+	sprintf(write_buffer, "server: client %d just arrived\n", fd_to_id[fd]);
+	forward_message(fd, write_buffer);
+	if (fd > max_fd) {
+		max_fd = fd;
+	}
+}
+
+// add logic to remove client (fd from active fds clearing set, fd_to_id?, close fd, free message buffer) & notify other clients
+void remove_client(int fd) {
+	FD_CLR(fd, &active_fds);
+	close(fd);
+	sprintf(write_buffer, "server: client %d just left\n", fd_to_id[fd]);
+	forward_message(fd, write_buffer);
+	fd_to_id[fd] = -1;
+	free(message_buffer[fd]);
+	message_buffer[fd] = NULL;
+	if(fd == max_fd) {
+		while (max_fd > 0 && fd_to_id[max_fd] == -1) {
+			max_fd--;
+		}
+	}
+}
+
+void send_message(int fd) {
+	char *message = NULL;
+	while (extract_message(&message_buffer[fd], &message)) {
+		sprintf(write_buffer, "client %d: ", fd_to_id[fd]);
+		forward_message(fd, write_buffer);
+		forward_message(fd, message);
+		free(message);
+	}
+
+}
+
 // ---------------------------------------------------------------------------
 
 int main(int argc, char **argv) {
@@ -156,17 +202,7 @@ int main(int argc, char **argv) {
 			if (i = listener_fd) {
 				int new_client_fd = accept(listener_fd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 				if (new_client_fd >= 0) {
-					if (new_client_fd > max_fd) {
-						max_fd = new_client_fd;
-					}
-					fd_to_id[new_client_fd] = id++;
-					FD_SET(new_client_fd, &active_fds);
-					sprintf(write_buffer, "server: client %d just arrived\n", fd_to_id[new_client_fd]);
-					for (int client = 0; client <= max_fd; client++) {
-						if (client != new_client_fd && FD_ISSET(client, &write_fds)) {
-							send(client, write_buffer, strlen(write_buffer), 0);
-						}
-					}
+					handle_new_client(new_client_fd);
 					break;
 				}
 			}
@@ -174,13 +210,15 @@ int main(int argc, char **argv) {
 			else {
 				int read_bytes = recv(i, read_buffer, sizeof(read_buffer), 0);
 				if (read_bytes <= 0) { // probable disconnection
-					// add logic to remove client (fd from active fds clearing set, fd_to_id?, close fd, free message buffer) & notify other clients
+					remove_client(i);
 					break;
 				}
 				read_buffer[read_bytes] = '\0'; //null terminate buffer string
 				message_buffer[i] = str_join(message_buffer[i], read_buffer); // append newly received message to potential preexisting messages
 				//add logic to check if \n is present and send all full lines to other clients keeping only the rest in the message buffer
+				send_message(i);;
 			}
 		}
 	}
+	return (0);
 }
