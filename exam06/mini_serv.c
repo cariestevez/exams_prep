@@ -200,7 +200,8 @@ int main(int argc, char **argv) {
 			}
 			// new client connection
 			if (i == listener_fd) {
-				int new_client_fd = accept(listener_fd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+				socklen_t addrlen = sizeof(servaddr);
+				int new_client_fd = accept(listener_fd, (struct sockaddr *)&servaddr, &addrlen);
 				if (new_client_fd >= 0) {
 					handle_new_client(new_client_fd);
 					break;
