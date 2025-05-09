@@ -15,8 +15,8 @@ int max_fd = 0;
 int fd_to_id[1025];// client = connection = fd, id = count. 1st client = 0, 2nd = 1, etc
 int id = 0; // as many as possible open fds
 
-char *write_buffer[100];
-char *read_buffer[100];
+char write_buffer[100];
+char read_buffer[100];
 char *message_buffer[1025];
 // ---------------------------------------------------------------------------
 
