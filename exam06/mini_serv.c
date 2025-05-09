@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
 				continue;
 			}
 			// new client connection
-			if (i = listener_fd) {
+			if (i == listener_fd) {
 				int new_client_fd = accept(listener_fd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 				if (new_client_fd >= 0) {
 					handle_new_client(new_client_fd);
